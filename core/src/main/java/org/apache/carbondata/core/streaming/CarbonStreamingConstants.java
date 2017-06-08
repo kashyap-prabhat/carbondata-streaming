@@ -19,7 +19,7 @@ package org.apache.carbondata.core.streaming;
 
 public class CarbonStreamingConstants {
 
-  public static final long DEFAULT_CARBON_STREAM_FILE_BLOCK_SIZE = 1024 * 1024 *1024; // 1GB
+  public static final long DEFAULT_CARBON_STREAM_FILE_BLOCK_SIZE = 1024 * 1024 * 1024; // 1GB
 
 }
 

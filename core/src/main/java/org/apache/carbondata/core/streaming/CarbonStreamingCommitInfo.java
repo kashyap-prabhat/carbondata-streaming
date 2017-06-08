@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.core.streaming;
 
-/**
+/*
  * Commit info for streaming writes
  * The commit info can be used to recover valid offset in the file
  * in the case of write failure.
@@ -25,83 +25,85 @@ package org.apache.carbondata.core.streaming;
 
 public class CarbonStreamingCommitInfo {
 
-    private String dataBase;
+  private String dataBase;
 
-    private String table;
+  private String table;
 
-    private long commitTime;
+  private long commitTime;
 
-    private long segmentID;
+  private long segmentID;
 
-    private String partitionID;
+  private String partitionID;
 
-    private long batchID;
+  private long batchID;
 
-    private String fileOffset;
+  private String fileOffset;
 
-    private long transactionID;     // future use
+  private long transactionID;     // future use
 
-    public  CarbonStreamingCommitInfo(
+  public  CarbonStreamingCommitInfo(
 
-            String dataBase,
+      String dataBase,
 
-            String table,
+      String table,
 
-            long commitTime,
+      long commitTime,
 
-            long segmentID,
+      long segmentID,
 
-            String partitionID,
+      String partitionID,
 
-            long batchID) {
+      long batchID) {
 
-        this.dataBase = dataBase;
+    this.dataBase = dataBase;
 
-        this.table = table;
+    this.table = table;
 
-        this.commitTime = commitTime;
+    this.commitTime = commitTime;
 
-        this.segmentID = segmentID;
+    this.segmentID = segmentID;
 
-        this.partitionID = partitionID;
+    this.partitionID = partitionID;
 
-        this.batchID = batchID;
+    this.batchID = batchID;
 
-        this.transactionID = -1;
-    }
+    this.transactionID = -1;
+  }
 
-    public String getDataBase() {
-        return dataBase;
-    }
+  public String getDataBase() {
+    return dataBase;
+  }
 
-    public String getTable() {
-        return table;
-    }
+  public String getTable() {
+    return table;
+  }
 
-    public long getCommitTime() {
-        return commitTime;
-    }
+  public long getCommitTime() {
+    return commitTime;
+  }
 
-    public long getSegmentID() {
-        return segmentID;
-    }
+  public long getSegmentID() {
+    return segmentID;
+  }
 
-    public String getPartitionID() {
-        return partitionID;
-    }
+  public String getPartitionID() {
+    return partitionID;
+  }
 
-    public long getBatchID() {
-        return batchID;
-    }
+  public long getBatchID() {
+    return batchID;
+  }
 
-    public String getFileOffset() { return fileOffset; }
+  public String getFileOffset() {
+    return fileOffset;
+  }
 
-    public long getTransactionID() {
-        return transactionID;
-    }
+  public long getTransactionID() {
+    return transactionID;
+  }
 
-    @Override
-    public String toString() {
-        return dataBase + "." + table + "." + segmentID + "$" + partitionID;
-    }
+  @Override
+  public String toString() {
+    return dataBase + "." + table + "." + segmentID + "$" + partitionID;
+  }
 }

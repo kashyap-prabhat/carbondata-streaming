@@ -17,25 +17,26 @@
 
 package org.apache.carbondata.hadoop.streaming;
 
-import org.apache.carbondata.core.streaming.CarbonStreamingConstants;
-import org.apache.carbondata.processing.csvload.CSVInputFormat;
+import java.io.IOException;
+
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
-import java.io.IOException;
+import org.apache.carbondata.core.streaming.CarbonStreamingConstants;
+import org.apache.carbondata.processing.csvload.CSVInputFormat;
+
 
 /**
  * Output format to write streaming data to carbondata file
  *
- * @param <T> - type of record
+ * @param <V> - type of record
  */
 public class CarbonStreamingOutputFormat<K, V> extends FileOutputFormat<K, V> {
 
   public static long getBlockSize(Configuration conf) {
 
-    return conf.getLong( "dfs.block.size",
+    return conf.getLong("dfs.block.size",
             CarbonStreamingConstants.DEFAULT_CARBON_STREAM_FILE_BLOCK_SIZE);
   }
 
@@ -51,8 +52,8 @@ public class CarbonStreamingOutputFormat<K, V> extends FileOutputFormat<K, V> {
    */
 
   @Override
-  public CarbonStreamingRecordWriter<K, V> getRecordWriter(TaskAttemptContext job) throws IOException,
-          InterruptedException {
+  public CarbonStreamingRecordWriter<K, V> getRecordWriter(TaskAttemptContext job)
+          throws IOException, InterruptedException {
 
     Configuration conf = job.getConfiguration();
 

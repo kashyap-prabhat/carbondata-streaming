@@ -52,7 +52,7 @@ public class CarbonTablePath extends Path {
   protected static final String DELETE_DELTA_FILE_EXT = ".deletedelta";
 
   /**
-   * Streaming ingest related parameters
+   * Streaming ingest related paths
    */
   protected static final String STREAM_PREFIX = "Streaming";
   public static final String STREAM_FILE_NAME_EXT = ".carbondata.stream";

@@ -20,17 +20,16 @@ package org.apache.carbondata.hadoop.streaming;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
-import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
-
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 
 public class CarbonStreamingRecordWriter<K,V> extends RecordWriter<K, V> {
@@ -41,14 +40,14 @@ public class CarbonStreamingRecordWriter<K,V> extends RecordWriter<K, V> {
 
   static {
 
-      try {
+    try {
 
-          newline = "\n".getBytes(utf8);
+      newline = "\n".getBytes(utf8);
 
-      } catch (UnsupportedEncodingException uee) {
+    } catch (UnsupportedEncodingException uee) {
 
-          throw new IllegalArgumentException("Can't find " + utf8 + " encoding");
-      }
+      throw new IllegalArgumentException("Can't find " + utf8 + " encoding");
+    }
   }
 
   private FSDataOutputStream outputStream;
@@ -83,11 +82,11 @@ public class CarbonStreamingRecordWriter<K,V> extends RecordWriter<K, V> {
 
     try {
 
-        this.keyValueSeparator = keyValueSeparator.getBytes(utf8);
+      this.keyValueSeparator = keyValueSeparator.getBytes(utf8);
 
     } catch (UnsupportedEncodingException uee) {
 
-        throw new IllegalArgumentException("Can't find " + utf8 + "encoding");
+      throw new IllegalArgumentException("Can't find " + utf8 + "encoding");
 
     }
 
@@ -157,9 +156,9 @@ public class CarbonStreamingRecordWriter<K,V> extends RecordWriter<K, V> {
 
     if (!isClosed) {
 
-        outputStream.close();
+      outputStream.close();
 
-        isClosed = true;
+      isClosed = true;
     }
 
   }
@@ -184,7 +183,7 @@ public class CarbonStreamingRecordWriter<K,V> extends RecordWriter<K, V> {
     fs.rename(file, commitFile);
 
     if (!finalCommit) {
-        initOut();
+      initOut();
     }
   }
 
