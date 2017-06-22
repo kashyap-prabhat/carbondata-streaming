@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.hadoop.streaming;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
@@ -34,6 +36,15 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 public class CarbonStreamingRecordWriter<K,V> extends RecordWriter<K, V> {
 
+  public static void writeLog(String message){
+    try (BufferedWriter bw = new BufferedWriter(new FileWriter("/home/prabhat/test.log", true))) {
+      bw.append("[CarbonStreamingRecordWriter]" + message).append("\n");
+      System.out.println("[CarbonStreamingRecordWriter]" + message);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+
   private static final String utf8 = "UTF-8";
 
   private static final byte[] newline;
@@ -41,7 +52,7 @@ public class CarbonStreamingRecordWriter<K,V> extends RecordWriter<K, V> {
   static {
 
     try {
-
+      writeLog("Inside Static block");
       newline = "\n".getBytes(utf8);
 
     } catch (UnsupportedEncodingException uee) {
@@ -61,7 +72,7 @@ public class CarbonStreamingRecordWriter<K,V> extends RecordWriter<K, V> {
   private final byte[] keyValueSeparator;
 
   public void initOut() throws IOException {
-
+    writeLog("Inside initOut");
     outputStream = fs.create(file, false);
 
     isClosed = false;
@@ -71,11 +82,11 @@ public class CarbonStreamingRecordWriter<K,V> extends RecordWriter<K, V> {
           Configuration conf,
           Path file,
           String keyValueSeparator) throws IOException {
-
+    writeLog("Inside Constructor conf: " + conf + " file: " + file);
     this.file = file;
 
     fs = FileSystem.get(conf);
-
+    writeLog("Just before creation");
     outputStream = fs.create(file, false);
 
     isClosed = false;
@@ -105,7 +116,7 @@ public class CarbonStreamingRecordWriter<K,V> extends RecordWriter<K, V> {
    */
 
   private void writeObject(Object o) throws IOException {
-
+    writeLog("Inside writeObject");
     if (o instanceof Text) {
       Text to = (Text)o;
 
@@ -124,7 +135,7 @@ public class CarbonStreamingRecordWriter<K,V> extends RecordWriter<K, V> {
 
   @Override
   public synchronized void write(K key, V value) throws IOException {
-
+    writeLog("Inside write");
     boolean isNULLKey = key == null || key instanceof NullWritable;
 
     boolean isNULLValue = value == null || value instanceof NullWritable;
@@ -153,7 +164,7 @@ public class CarbonStreamingRecordWriter<K,V> extends RecordWriter<K, V> {
   }
 
   private void closeInternal() throws IOException {
-
+    writeLog("Inside close Internal");
     if (!isClosed) {
 
       outputStream.close();
@@ -164,17 +175,17 @@ public class CarbonStreamingRecordWriter<K,V> extends RecordWriter<K, V> {
   }
 
   public void flush() throws IOException {
-
+    writeLog("Inside flush");
     outputStream.hflush();
   }
 
   public long getOffset() throws IOException {
-
+    writeLog("Inside get offset");
     return outputStream.getPos();
   }
 
   public void commit(boolean finalCommit) throws IOException {
-
+    writeLog("Inside commit");
     closeInternal();
 
     Path commitFile = new Path(file.getParent(),
@@ -189,7 +200,7 @@ public class CarbonStreamingRecordWriter<K,V> extends RecordWriter<K, V> {
 
   @Override
   public void close(TaskAttemptContext context) throws IOException, InterruptedException {
-
+    writeLog("Inside close");
     closeInternal();
   }
 

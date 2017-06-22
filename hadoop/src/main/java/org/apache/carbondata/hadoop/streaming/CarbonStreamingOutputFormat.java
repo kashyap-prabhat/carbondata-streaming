@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.hadoop.streaming;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
@@ -46,6 +48,15 @@ public class CarbonStreamingOutputFormat<K, V> extends FileOutputFormat<K, V> {
 
   }
 
+  public static void writeLog(String message) throws IOException {
+    try (BufferedWriter bw = new BufferedWriter(new FileWriter("/home/prabhat/test.log", true))) {
+      bw.append("[CarbonStreamingOutputFormat]: " + message).append("\n");
+      System.out.println("[CarbonStreamingOutputFormat]: " + message);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+
   /**
    * When getRecordWriter may need to override
    * to provide correct path including streaming segment name
@@ -55,11 +66,15 @@ public class CarbonStreamingOutputFormat<K, V> extends FileOutputFormat<K, V> {
   public CarbonStreamingRecordWriter<K, V> getRecordWriter(TaskAttemptContext job)
           throws IOException, InterruptedException {
 
+    writeLog(" Job Status : " + job.getJobName() + " : " + job.toString());
+
     Configuration conf = job.getConfiguration();
 
     String keyValueSeparator = conf.get(
             CSVInputFormat.DELIMITER,
             CSVInputFormat.DELIMITER_DEFAULT);
+
+    writeLog("Key Value Separator" + keyValueSeparator);
 
     return new CarbonStreamingRecordWriter<K, V>(
             conf,

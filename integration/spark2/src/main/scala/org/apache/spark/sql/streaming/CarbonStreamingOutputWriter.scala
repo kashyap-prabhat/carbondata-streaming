@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql.streaming
 
+import java.io.{BufferedWriter, FileWriter, IOException}
+
 import org.apache.carbondata.hadoop.streaming.{CarbonStreamingOutputFormat, CarbonStreamingRecordWriter}
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.{NullWritable, Text}
@@ -32,6 +34,19 @@ class CarbonStreamingOutputWriter (
     context: TaskAttemptContext)
     extends OutputWriter {
 
+  def writeLog(message: String): Unit = {
+    try {
+      val bw = new BufferedWriter(new FileWriter("/home/prabhat/test.log", true))
+      try {
+        bw.append("[]" + message).append("\n")
+        Console.print("[]" + message)
+      } catch {
+        case e: IOException =>
+          e.printStackTrace()
+      } finally if (bw != null) bw.close()
+    }
+  }
+
   private[this] val buffer = new Text()
 
   private val recordWriter: CarbonStreamingRecordWriter[NullWritable, Text] = {
@@ -39,6 +54,7 @@ class CarbonStreamingOutputWriter (
     val outputFormat = new CarbonStreamingOutputFormat[NullWritable, Text] () {
 
       override def getDefaultWorkFile(context: TaskAttemptContext, extension: String) : Path = {
+        writeLog("[CSOF] Default Work File == Path: " + path)
         new Path(path)
       }
 
@@ -55,43 +71,47 @@ class CarbonStreamingOutputWriter (
   }
 
   override def write(row: Row): Unit = {
-
+    writeLog("[CSOF] Row: " + row)
     throw new UnsupportedOperationException("call writeInternal")
 
   }
 
   override protected [sql] def writeInternal(row: InternalRow): Unit = {
 
+    writeLog("[CSOF] {Write Internal} Row: " + row)
     val utf8string = row.getUTF8String(0)
-
+    writeLog("[CSOF] UTF8String: " + utf8string)
     buffer.set(utf8string.getBytes)
 
     recordWriter.write(NullWritable.get(), buffer)
 
   }
 
-  def getpath: String = path
+  def getpath: String = {
+    writeLog("[CSOF] Get Path == Path: " + path)
+    path
+  }
 
   override def close(): Unit = {
-
+    writeLog("[CSOF] Inside Close")
     recordWriter.close(context)
 
   }
 
   def flush(): Unit = {
-
+    writeLog("[CSOF] Inside Flush")
     recordWriter.flush()
 
   }
 
   def getPos(): Long = {
-
+    writeLog("[CSOF] getPos : " + recordWriter.getOffset())
     recordWriter.getOffset()
 
   }
 
   def commit(finalCommit: Boolean): Unit = {
-
+    writeLog("[CSOF] Final Commit  : " + finalCommit)
     recordWriter.commit(finalCommit)
 
   }

@@ -17,7 +17,11 @@
 
 package org.apache.spark.sql
 
+import java.io.{BufferedWriter, FileWriter, IOException}
+import java.util.UUID
+
 import scala.language.implicitConversions
+
 import org.apache.commons.lang.StringUtils
 import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
@@ -27,6 +31,7 @@ import org.apache.spark.sql.optimizer.CarbonLateDecodeRule
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types.{StringType, StructType}
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.CarbonOption
@@ -35,18 +40,41 @@ import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.sql.execution.datasources.{FileFormat, OutputWriterFactory}
 import org.apache.spark.sql.streaming.CarbonStreamingOutputWriterFactory
 
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
+import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
+
 /**
  * Carbon relation provider compliant to data source api.
  * Creates carbon relations
  */
 class CarbonSource extends CreatableRelationProvider with RelationProvider
-  with SchemaRelationProvider with DataSourceRegister with FileFormat  {
+  with SchemaRelationProvider with DataSourceRegister with FileFormat {
 
-  override def shortName(): String = "carbondata"
+  def writeLog(message: String): Unit = {
+    try {
+      val bw = new BufferedWriter(new FileWriter("/home/prabhat/test.log", true))
+      try {
+        bw.append("[CarbonSource] : " + message).append("\n")
+        Console.print("[CarbonSource] : " + message)
+      } catch {
+        case e: IOException =>
+          e.printStackTrace()
+      } finally if (bw != null) {
+        bw.close()
+      }
+    }
+  }
+
+  override def shortName(): String = {
+    writeLog("Shortname called")
+    "carbondata"
+  }
 
   // will be called if hive supported create table command is provided
   override def createRelation(sqlContext: SQLContext,
       parameters: Map[String, String]): BaseRelation = {
+    writeLog("Create Relation [1] : " + parameters)
     CarbonEnv.getInstance(sqlContext.sparkSession)
     // if path is provided we can directly create Hadoop relation. \
     // Otherwise create datasource relation
@@ -70,6 +98,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
       mode: SaveMode,
       parameters: Map[String, String],
       data: DataFrame): BaseRelation = {
+    writeLog("Create Relation [2] : " + parameters)
     CarbonEnv.getInstance(sqlContext.sparkSession)
     // User should not specify path since only one store is supported in carbon currently,
     // after we support multi-store, we can remove this limitation
@@ -112,6 +141,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
       sqlContext: SQLContext,
       parameters: Map[String, String],
       dataSchema: StructType): BaseRelation = {
+    writeLog("Create Relation [3] : " + parameters)
     CarbonEnv.getInstance(sqlContext.sparkSession)
     addLateDecodeOptimization(sqlContext.sparkSession)
     val dbName: String = parameters.getOrElse("dbName",
@@ -126,9 +156,9 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     }
     val path = if (sqlContext.sparkSession.sessionState.catalog.listTables(dbName)
       .exists(_.table.equalsIgnoreCase(tableName))) {
-        getPathForTable(sqlContext.sparkSession, dbName, tableName)
+      getPathForTable(sqlContext.sparkSession, dbName, tableName)
     } else {
-        createTableIfNotExists(sqlContext.sparkSession, parameters, dataSchema)
+      createTableIfNotExists(sqlContext.sparkSession, parameters, dataSchema)
     }
 
     CarbonDatasourceHadoopRelation(sqlContext.sparkSession, Array(path), parameters,
@@ -136,6 +166,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
   }
 
   private def addLateDecodeOptimization(ss: SparkSession): Unit = {
+    writeLog("Inside addLateDecodeOptimization")
     if (ss.sessionState.experimentalMethods.extraStrategies.isEmpty) {
       ss.sessionState.experimentalMethods.extraStrategies = Seq(new CarbonLateDecodeStrategy)
       ss.sessionState.experimentalMethods.extraOptimizations = Seq(new CarbonLateDecodeRule)
@@ -145,7 +176,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
 
   private def createTableIfNotExists(sparkSession: SparkSession, parameters: Map[String, String],
       dataSchema: StructType): String = {
-
+    writeLog("Inside addLateDecodeOptimization = " + parameters)
     val dbName: String = parameters.getOrElse("dbName",
       CarbonCommonConstants.DATABASE_DEFAULT_NAME).toLowerCase
     val tableName: String = parameters.getOrElse("tableName", "").toLowerCase
@@ -172,14 +203,15 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
 
   /**
    * Returns the path of the table
+   *
    * @param sparkSession
    * @param dbName
    * @param tableName
    * @return
    */
   private def getPathForTable(sparkSession: SparkSession, dbName: String,
-      tableName : String): String = {
-
+      tableName: String): String = {
+    writeLog("Inside getPathForTable " + dbName + " ||| " + tableName)
     if (StringUtils.isBlank(tableName)) {
       throw new MalformedCarbonCommandException("The Specified Table Name is Blank")
     }
@@ -197,24 +229,55 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
   }
 
   /**
-    * Prepares a write job and returns an [[OutputWriterFactory]].  Client side job preparation can
-    * be put here.  For example, user defined output committer can be configured here
-    * by setting the output committer class in the conf of spark.sql.sources.outputCommitterClass.
-    */
+   * Prepares a write job and returns an [[OutputWriterFactory]].  Client side job preparation can
+   * be put here.  For example, user defined output committer can be configured here
+   * by setting the output committer class in the conf of spark.sql.sources.outputCommitterClass.
+   */
   def prepareWrite(
-                    sparkSession: SparkSession,
-                    job: Job,
-                    options: Map[String, String],
-                    dataSchema: StructType): OutputWriterFactory = new CarbonStreamingOutputWriterFactory()
+      sparkSession: SparkSession,
+      job: Job,
+      options: Map[String, String],
+      dataSchema: StructType): OutputWriterFactory = {
+    val path: Boolean = options.get("path").isDefined
+    Console.println("Path Print karo " + path)
+    writeLog("In prepareWrite: " + options)
+    //    validateTable(path)
+    new CarbonStreamingOutputWriterFactory()
+  }
+
+  private def validateTable(path: String): CarbonStreamingOutputWriterFactory = {
+    val tableName = path.toString.split("/").toList.reverse.head
+    val databaseName = path.toString.split("/").toList.reverse(2)
+    val absoluteTableIdentifier: AbsoluteTableIdentifier = new AbsoluteTableIdentifier(path,
+      new CarbonTableIdentifier(databaseName, tableName, UUID.randomUUID().toString))
+    if (checkIfTableExists(absoluteTableIdentifier)) {
+      new CarbonStreamingOutputWriterFactory()
+    } else {
+      Console.print(s"/$databaseName/$tableName does not exist.")
+      throw new NoSuchTableException(databaseName, tableName)
+    }
+  }
+
+  private def checkIfTableExists(absoluteTableIdentifier: AbsoluteTableIdentifier): Boolean = {
+    val carbonTablePath: CarbonTablePath = CarbonStorePath
+      .getCarbonTablePath(absoluteTableIdentifier)
+    val schemaFilePath: String = carbonTablePath.getSchemaFilePath
+    FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.LOCAL) ||
+    FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.HDFS) ||
+    FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.VIEWFS)
+  }
 
   /**
-    * When possible, this method should return the schema of the given `files`.  When the format
-    * does not support inference, or no valid files are given should return None.  In these cases
-    * Spark will require that user specify the schema manually.
-    */
+   * When possible, this method should return the schema of the given `files`.  When the format
+   * does not support inference, or no valid files are given should return None.  In these cases
+   * Spark will require that user specify the schema manually.
+   */
   def inferSchema(
-                   sparkSession: SparkSession,
-                   options: Map[String, String],
-                   files: Seq[FileStatus]): Option[StructType] = Some(new StructType().add("value", StringType))
+      sparkSession: SparkSession,
+      options: Map[String, String],
+      files: Seq[FileStatus]): Option[StructType] = {
+    writeLog("Infer Schema: " + options)
+    Some(new StructType().add("value", StringType))
+  }
 
 }

@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql.streaming
 
+import java.io.{BufferedWriter, FileWriter, IOException}
 import java.util.concurrent.ConcurrentHashMap
 
 //import org.apache.calcite.avatica.ColumnMetaData.StructType
@@ -28,6 +29,19 @@ import org.apache.spark.sql.types.StructType
 
 class CarbonStreamingOutputWriterFactory extends OutputWriterFactory {
 
+  def writeLog(message: String): Unit = {
+    try {
+      val bw = new BufferedWriter(new FileWriter("/home/prabhat/test.log", true))
+      try {
+        bw.append("[CarbonStreamingOutputWriterFactory]" + message).append("\n")
+        Console.print("[CarbonStreamingOutputWriterFactory]" + message)
+      } catch {
+        case e: IOException =>
+          e.printStackTrace()
+      } finally if (bw != null) bw.close()
+    }
+  }
+
   /**
     * When writing to a [[org.apache.spark.sql.execution.datasources.HadoopFsRelation]], this method gets called by each task on executor side
     * to instantiate new [[org.apache.spark.sql.execution.datasources.OutputWriter]]s.
@@ -38,6 +52,7 @@ class CarbonStreamingOutputWriterFactory extends OutputWriterFactory {
     * @param context The Hadoop MapReduce task context.
     */
 
+
   override def newInstance(
                             path: String,
 
@@ -45,6 +60,7 @@ class CarbonStreamingOutputWriterFactory extends OutputWriterFactory {
 
                             context: TaskAttemptContext) : CarbonStreamingOutputWriter = {
 
+    writeLog("Inside new Instance")
     new CarbonStreamingOutputWriter(path, context)
   }
 
@@ -57,10 +73,24 @@ class CarbonStreamingOutputWriterFactory extends OutputWriterFactory {
 
 object CarbonStreamingOutpurWriterFactory {
 
+  def writeLog(message: String): Unit = {
+    try {
+      val bw = new BufferedWriter(new FileWriter("/home/prabhat/test.log", true))
+      try {
+        bw.append("[CarbonStreamingOutputWriterFactory]" + message).append("\n")
+        Console.print("[CarbonStreamingOutputWriterFactory]" + message)
+      } catch {
+        case e: IOException =>
+          e.printStackTrace()
+      } finally if (bw != null) bw.close()
+    }
+  }
+
+
   private[this] val writers = new ConcurrentHashMap[String, CarbonStreamingOutputWriter]()
 
   def addWriter(path: String, writer: CarbonStreamingOutputWriter): Unit = {
-
+    writeLog("[Add Writer] Path: " + path)
     if (writers.contains(path)) {
       throw new IllegalArgumentException(path + "writer already exists")
     }
@@ -69,17 +99,17 @@ object CarbonStreamingOutpurWriterFactory {
   }
 
   def getWriter(path: String): CarbonStreamingOutputWriter = {
-
+    writeLog("Inside get Writer")
     writers.get(path)
   }
 
   def containsWriter(path: String): Boolean = {
-
+    writeLog("Inside contain writer")
     writers.containsKey(path)
   }
 
   def removeWriter(path: String): Unit = {
-
+    writeLog("Inside remove Writer")
     writers.remove(path)
   }
 }
