@@ -240,6 +240,8 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
                     options: Map[String, String],
                     dataSchema: StructType): OutputWriterFactory = {
     //    val pathExists: Boolean = options.get("path").isDefined
+    Console.println("Options : "+options)
+    Console.println("Spark session : "+ sparkSession)
     val tablePath = options.get("path")
     val path: String = tablePath match {
       case Some(value) => value
@@ -248,7 +250,8 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     val meta: CarbonMetastore = new CarbonMetastore(sparkSession.conf, path)
     val schemaPath = path + "/Metadata/schema"
     val schema: TableInfo = meta.readSchemaFile(schemaPath)
-
+  Console.println("Schema : "+schema)
+    Console.println("DataScehma : "+dataSchema)
     val isValid = validateSchema(schema, dataSchema)
     Console.println("Schema valid ::: " + isValid)
     if(isValid)
@@ -263,7 +266,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     * @param dataSchema streamed schema
     * @return true if schema validation is successful else false
     */
-  def validateSchema(schema: TableInfo, dataSchema: StructType): Boolean = {
+  private def validateSchema(schema: TableInfo, dataSchema: StructType): Boolean = {
     val factTable: TableSchema = schema.getFact_table
     import scala.collection.JavaConversions._
     val columnnSchemaValues = factTable.getTable_columns.toList
@@ -314,7 +317,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     * @param element
     * @return list with added element
     */
-  def addToList(list1: List[String], element: String): List[String] = {
+  private def addToList(list1: List[String], element: String): List[String] = {
     List(element) ::: list1
   }
 
@@ -324,7 +327,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     * @param map
     * @return
     */
-  def addToMap(pair: (String, String), map: Map[String, String]): Map[String, String] = {
+  private def addToMap(pair: (String, String), map: Map[String, String]): Map[String, String] = {
     map + (pair._1 -> pair._2)
   }
 
