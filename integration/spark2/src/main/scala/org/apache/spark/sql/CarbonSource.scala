@@ -251,12 +251,18 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
 
     val isValid = validateSchema(schema, dataSchema)
     Console.println("Schema valid ::: " + isValid)
-    if (isValid)
-      new CarbonStreamingOutputWriterFactory()
+    if(isValid)
+    new CarbonStreamingOutputWriterFactory()
     else
       throw new InvalidSchemaException("Exception in schema validation : ")
   }
 
+  /**
+    * Validates streamed schema against existing table schema
+    * @param schema existing table schema
+    * @param dataSchema streamed schema
+    * @return true if schema validation is successful else false
+    */
   def validateSchema(schema: TableInfo, dataSchema: StructType): Boolean = {
     val factTable: TableSchema = schema.getFact_table
     import scala.collection.JavaConversions._
@@ -266,25 +272,25 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     val dataTypes = for {cn <- columnnSchemaValues
                          data: List[String] = addToList(dataTypeList, cn.data_type.toString)
     } yield data
-    val listOfDatatypes = dataTypes.flatMap(element => element)
+    val listOfDatatypes = dataTypes.flatten
     val columnNames = for {cn <- columnnSchemaValues
                            data: List[String] = addToList(columnNameList, cn.column_name)
     } yield data
 
-    val listOfColumnNames = columnNames.flatMap(element => element)
+    val listOfColumnNames = columnNames.flatten
     val pairOfStoredSchema = listOfColumnNames.zip(listOfDatatypes)
-    val mapOfStoredTableSchema = pairOfStoredSchema.flatMap(x => addToMap(x, Map[String, String]())).toMap
+    val mapOfStoredTableSchema = pairOfStoredSchema.flatMap(element => addToMap(element, Map[String, String]())).toMap
     Console.println("Map of stored schema ::: " + mapOfStoredTableSchema)
 
     val StreamedSchema: StructType = dataSchema
     val size = StreamedSchema.size
-    val StreamedDataTypeList = List[String]()
-    val StreamedDataFromSchema = for {i <- 0 until size
-                                data: List[String] = addToList(StreamedDataTypeList, StreamedSchema.fields(i).dataType.toString)
+    val StreamedDataTypeInitialList = List[String]()
+    val StreamedDataType = for {i <- 0 until size
+                                data: List[String] = addToList(StreamedDataTypeInitialList, StreamedSchema.fields(i).dataType.toString)
     } yield data
 
-    val SatreamedDataType = StreamedDataFromSchema.flatten.toList
-    val parsedDatatypeList = for {list <- SatreamedDataType
+    val StreamedDataTypeList = StreamedDataType.flatten.toList
+    val parsedDatatypeList = for {list <- StreamedDataTypeList
                                   a = parseStreamingDataType(list)} yield a
 
     val StreamedColumnNameList = List[String]()
@@ -302,14 +308,31 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     isValid
   }
 
+  /**
+    * Adds element to the list
+    * @param list1
+    * @param element
+    * @return list with added element
+    */
   def addToList(list1: List[String], element: String): List[String] = {
     List(element) ::: list1
   }
 
+  /**
+    * Adds a pair of values to the map
+    * @param pair
+    * @param map
+    * @return
+    */
   def addToMap(pair: (String, String), map: Map[String, String]): Map[String, String] = {
     map + (pair._1 -> pair._2)
   }
 
+  /**
+    * Parses streamed datatype according to carbon datatype
+    * @param dataType
+    * @return
+    */
   def parseStreamingDataType(dataType: String): String = {
     dataType match {
       case "IntegerType" => DataType.INT.toString
